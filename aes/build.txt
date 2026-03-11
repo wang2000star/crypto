@@ -1,0 +1,7 @@
+conda create -n crypto python=3.11
+
+conda activate crypto
+
+pip install pyside6 cryptography pywin32 pyinstaller pillow cairosvg
+
+pyinstaller --onefile --windowed --icon=icon.ico --name "AES256加密工具" aes256_crypto_tool.py
