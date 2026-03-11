@@ -5,9 +5,9 @@ import struct
 import secrets
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QPushButton, QLabel, QLineEdit, QCheckBox, QFileDialog,
-                               QProgressBar, QMessageBox, QGroupBox)
+                               QProgressBar, QMessageBox, QGroupBox, QToolButton)  # 新增导入QToolButton
 from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QAction  # 新增QAction（可选）
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -180,15 +180,33 @@ class Window(QMainWindow):
         g1.setLayout(l1)
         layout.addWidget(g1)
 
-        # 2. 密钥
+        # 2. 密钥（核心修改：添加密码可见性切换按钮）
         g2 = QGroupBox("密钥")
         l2 = QVBoxLayout()
+        
+        # 新增：密钥输入框 + 切换按钮的水平布局
+        key_layout = QHBoxLayout()
         self.key_edit = QLineEdit()
         self.key_edit.setPlaceholderText("输入密钥 (4-1024位)")
-        self.key_edit.setEchoMode(QLineEdit.Password)
+        self.key_edit.setEchoMode(QLineEdit.Password)  # 默认隐藏密码
+        
+        # 密码可见性切换按钮
+        self.toggle_pwd_btn = QToolButton()
+        self.toggle_pwd_btn.setText("👁️")  # 眼睛图标（也可替换为QIcon）
+        self.toggle_pwd_btn.setCursor(Qt.PointingHandCursor)
+        self.toggle_pwd_btn.setStyleSheet("border: none; padding: 0 5px;")
+        self.toggle_pwd_btn.clicked.connect(self.toggle_password_visibility)  # 绑定切换函数
+        
+        # 将输入框和按钮加入水平布局
+        key_layout.addWidget(self.key_edit)
+        key_layout.addWidget(self.toggle_pwd_btn)
+        
+        # 加载保存的密钥
         saved_key = KeyManager.load()
         if saved_key: self.key_edit.setText(saved_key)
-        l2.addWidget(self.key_edit)
+        
+        # 将水平布局加入密钥组的垂直布局
+        l2.addLayout(key_layout)
         self.cb_save = QCheckBox("保存密钥到系统凭据")
         self.cb_save.setChecked(bool(saved_key))
         l2.addWidget(self.cb_save)
@@ -211,6 +229,17 @@ class Window(QMainWindow):
         self.prog = QProgressBar()
         self.prog.setVisible(False)
         layout.addWidget(self.prog)
+
+    # 新增：密码可见性切换函数
+    def toggle_password_visibility(self):
+        if self.key_edit.echoMode() == QLineEdit.Password:
+            # 切换为明文显示
+            self.key_edit.setEchoMode(QLineEdit.Normal)
+            self.toggle_pwd_btn.setText("🙈")  # 闭眼图标
+        else:
+            # 切换为隐藏模式
+            self.key_edit.setEchoMode(QLineEdit.Password)
+            self.toggle_pwd_btn.setText("👁️")  # 睁眼图标
 
     # 新增：选择文件方法
     def browse_file(self):
